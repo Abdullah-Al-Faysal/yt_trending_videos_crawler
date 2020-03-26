@@ -3,7 +3,6 @@ import datetime
 import json
 import dateparser
 from functions import normalize_metadate, get_category, get_language
-from data_access_layer import save_videos
 import logging
 
 logging.basicConfig(filename='yttv.log', level=logging.DEBUG,
@@ -156,10 +155,3 @@ def get_value_if_key_exists_or_default(dictionary, key, default_value=None):
 def check_if_key_exists(dictionary, key):
     return key in dictionary
 
-
-if __name__ == "__main__":
-    result = get_trending_videos(
-        "https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=IN&key=AIzaSyDNTGIwf-TsAweg6-yFHWR4ZTkFPYlaeVE")
-    print(result[10], len(result))
-    save_videos(result)
-    # get_daily_trending_videos()
