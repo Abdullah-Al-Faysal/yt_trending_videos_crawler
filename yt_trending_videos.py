@@ -2,7 +2,8 @@ import urllib.request
 import datetime
 import json
 import dateparser
-from functions import *
+from functions import normalize_metadate, get_category, get_language
+from data_access_layer import save_videos
 import logging
 
 logging.basicConfig(filename='yttv.log', level=logging.DEBUG,
@@ -42,6 +43,9 @@ region_trending_videos_urls = [
     "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=US&key=AIzaSyDNTGIwf-TsAweg6-yFHWR4ZTkFPYlaeVE"
 ]
 
+YT_API_CHANNEL_DATA_BASE_URL = "https://www.googleapis.com/youtube/v3/channels?part=snippet%2Cstatistics&maxResults=50&key=AIzaSyDNTGIwf-TsAweg6-yFHWR4ZTkFPYlaeVE&id="
+UNIQUE_CHANNELS = {}
+
 
 def get_daily_trending_videos():
     try:
@@ -57,16 +61,17 @@ def get_daily_trending_videos():
     except Exception as err:
         print("all region error >> ", err)
         logger.error(err)
-        return None
+        return []
 
 
 def get_trending_videos(request_url):
     try:
+        print("region hit >> ")
         first_page_request_url = request_url
         next_page_token = True
         all_trending_videos = []
         while next_page_token is not None:
-            response = get_page_videos_data(request_url)
+            response = get_yt_api_request_data(request_url)
             all_trending_videos += get_video_data(response['items'])
             next_page_token = get_value_if_key_exists_or_default(response, "nextPageToken")
             if next_page_token is None:
@@ -76,10 +81,10 @@ def get_trending_videos(request_url):
     except Exception as err:
         print("region error >> ", err)
         logger.error(err)
-        return None
+        return []
 
 
-def get_page_videos_data(request_url):
+def get_yt_api_request_data(request_url):
     try:
         with urllib.request.urlopen(request_url) as url:
             response = json.loads(url.read().decode())
@@ -88,7 +93,7 @@ def get_page_videos_data(request_url):
     except Exception as err:
         print("req error >> ", err)
         logger.error(err)
-        return None
+        return {}
 
 
 def get_video_data(videos):
@@ -101,18 +106,47 @@ def get_video_data(videos):
             video_data["published_date"] = normalize_metadate(video['snippet']['publishedAt'])
             video_data["channel_id"] = video['snippet']['channelId']
             video_data["channel_title"] = video['snippet']['channelTitle']
-            video_data["channel_url"] = YT_CHANNEL_BASE_URL + video_data["channel_title"]
-            video_data["views"] = get_value_if_key_exists_or_default(video['statistics'], "viewCount", 0)
-            video_data["likes"] = get_value_if_key_exists_or_default(video['statistics'], "likeCount", 0)
-            video_data["dislikes"] = get_value_if_key_exists_or_default(video['statistics'], "dislikeCount", 0)
-            video_data["comments"] = get_value_if_key_exists_or_default(video['statistics'], "commentCount", 0)
+            video_data["channel_url"] = YT_CHANNEL_BASE_URL + video_data["channel_id"]
+            UNIQUE_CHANNELS[video_data["channel_id"]] = ""
+            video_data["views"] = get_int_if_key_exists_or_default(video['statistics'], "viewCount")
+            video_data["likes"] = get_int_if_key_exists_or_default(video['statistics'], "likeCount")
+            video_data["dislikes"] = get_int_if_key_exists_or_default(video['statistics'], "dislikeCount")
+            video_data["comments"] = get_int_if_key_exists_or_default(video['statistics'], "commentCount")
             video_data["extracted_date"] = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+            video_data["language"] = get_language(video['snippet']['description'])
+            channel_data = get_channel_data(video_data["channel_id"])
+            video_data.update(channel_data)
             page_videos.append(video_data)
         return page_videos
     except Exception as err:
         print("item error >> ", err)
         logger.error(err)
         return []
+
+
+def get_channel_data(channel_id):
+    try:
+        request_url = YT_API_CHANNEL_DATA_BASE_URL + channel_id
+        channel_details = {}
+        response = get_yt_api_request_data(request_url)
+        channel = response["items"][0]
+        channel_details["location"] = get_value_if_key_exists_or_default(channel["snippet"], "country", "N/A")
+        UNIQUE_CHANNELS[channel_id] = channel_details["location"]
+        channel_details["channel_language"] = get_language(channel["snippet"]["description"])
+        channel_details["channel_views"] = get_int_if_key_exists_or_default(channel['statistics'], "viewCount")
+        channel_details["channel_subscribers"] = get_int_if_key_exists_or_default(channel['statistics'],
+                                                                                  "subscriberCount")
+        channel_details["channel_videos"] = get_int_if_key_exists_or_default(channel['statistics'], "videoCount")
+        channel_details["channel_comments"] = get_int_if_key_exists_or_default(channel['statistics'], "commentCount")
+        return channel_details
+    except Exception as err:
+        print("channel error >> ", err)
+        logger.error(err)
+        return {}
+
+
+def get_int_if_key_exists_or_default(dictionary, key, default_value=None):
+    return int(dictionary[key]) if check_if_key_exists(dictionary, key) else default_value
 
 
 def get_value_if_key_exists_or_default(dictionary, key, default_value=None):
@@ -124,5 +158,8 @@ def check_if_key_exists(dictionary, key):
 
 
 if __name__ == "__main__":
-    # get_trending_videos("https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=AE&key=AIzaSyDNTGIwf-TsAweg6-yFHWR4ZTkFPYlaeVE")
-    get_daily_trending_videos()
+    result = get_trending_videos(
+        "https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=IN&key=AIzaSyDNTGIwf-TsAweg6-yFHWR4ZTkFPYlaeVE")
+    print(result[10], len(result))
+    save_videos(result)
+    # get_daily_trending_videos()
