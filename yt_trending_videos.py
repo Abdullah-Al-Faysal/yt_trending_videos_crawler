@@ -91,7 +91,6 @@ def get_yt_api_request_data(request_url):
         with urllib.request.urlopen(request_url) as url:
             response = json.loads(url.read().decode())
             return response
-
     except Exception as err:
         print("req error >> ", err)
         logger.error(err)
