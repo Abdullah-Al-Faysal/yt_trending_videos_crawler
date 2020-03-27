@@ -1,8 +1,11 @@
 import pymysql
 import logging
 
-logging.basicConfig(filename='yttracker.log', level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
+logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\yttv.log',
+                    level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s [%(filename)s:%(lineno)s - %(funcName)20s()] %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filemode='w')
 logger = logging.getLogger(__name__)
 
 
