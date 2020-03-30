@@ -29,7 +29,7 @@ def save_videos(all_videos):
     try:
         connection = get_connection()
         counter = 0
-        query = """INSERT INTO script_export_videos (video_id, video_title, category, published_date, views, likes, 
+        query = """INSERT INTO script_export_videos (video_id, video_title, trending_at, category, published_date, views, likes, 
                 dislikes, comments,  extracted_date, language, channel_id, channel_title, channel_url, channel_language,
                 channel_views, channel_subscribers, channel_videos, channel_comments, location) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -38,6 +38,7 @@ def save_videos(all_videos):
                 result = cursor.execute(query, (
                     video["video_id"],
                     video["video_title"],
+                    video["trending_at"],
                     video["category"],
                     video["published_date"],
                     video["views"],
