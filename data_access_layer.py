@@ -32,7 +32,7 @@ def save_videos(all_videos):
         query = """INSERT INTO script_export_videos (video_id, video_title, trending_at, category, published_date, views, likes, 
                 dislikes, comments,  extracted_date, language, channel_id, channel_title, channel_url, channel_language,
                 channel_views, channel_subscribers, channel_videos, channel_comments, location) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         with connection.cursor() as cursor:
             for video in all_videos:
                 result = cursor.execute(query, (
