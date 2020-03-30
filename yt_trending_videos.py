@@ -9,7 +9,7 @@ logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\yttv.
                     level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s [%(filename)s:%(lineno)s - %(funcName)20s()] %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
-                    filemode='w')
+                    filemode='a')
 logger = logging.getLogger(__name__)
 
 YT_CHANNEL_BASE_URL = "https://www.youtube.com/channel/"
@@ -54,11 +54,11 @@ def get_daily_trending_videos():
         all_region_trending_videos = []
         for (region, url) in region_trending_videos_urls_map.items():
             region_trending_videos = get_trending_videos(region, url)
-            print("region total >> ", len(region_trending_videos))
             if region_trending_videos is not None and len(region_trending_videos) > 0:
                 all_region_trending_videos += region_trending_videos
-        print("all region total >> ", len(all_region_trending_videos))
-        # print(all_region_trending_videos[0])
+        logMessage = "all region total >> " + str(len(all_region_trending_videos))
+        print(logMessage)
+        logger.info(logMessage)
         return all_region_trending_videos
     except Exception as err:
         print("all region error >> ", err)
@@ -79,6 +79,9 @@ def get_trending_videos(region, request_url):
             if next_page_token is None:
                 break
             request_url = first_page_request_url + "&pageToken=" + next_page_token
+        logMessage = "region total >> " + str(len(all_trending_videos))
+        print(logMessage)
+        logger.info(logMessage)
         return all_trending_videos
     except Exception as err:
         print("region error >> ", err)
