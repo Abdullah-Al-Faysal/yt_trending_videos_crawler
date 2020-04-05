@@ -1,8 +1,8 @@
 import urllib.request
 import datetime
 import json
-import dateparser
 from functions import normalize_metadate, get_category, get_language
+from url_builder import UrlBuilder
 import logging
 
 logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\yttv.log',
@@ -12,48 +12,20 @@ logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\yttv.
                     filemode='a')
 logger = logging.getLogger(__name__)
 
+url_builder = UrlBuilder("AIzaSyC2j2IWkz0qqM643zOm5xbOt88djkTL024")
 YT_CHANNEL_BASE_URL = "https://www.youtube.com/channel/"
+target_regions = ["IN", "PK", "AE", "BD", "PH", "IR", "EG", "NP", "LK", "SY", "GB", "CN", "JO", "AF", "PS", "ZA", "LB",
+                  "ET", "YE", "ID", "SS", "SA", "SO", "IQ", "US"]
 
-regions = ["IN", "PK", "AE", "BD", "PH", "IR", "EG", "NP", "LK", "SY", "GB", "CN", "JO", "AF", "PS", "ZA", "LB", "ET",
-           "YE", "ID", "SS", "SA", "SO", "IQ", "US"]
-
-region_trending_videos_urls_map = {
-    "IN": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=IN&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "PK": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=PK&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "AE": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=AE&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "BD": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=BD&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "PH": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=PH&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "IR": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=IR&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "EG": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=EG&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "NP": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=NP&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "LK": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=LK&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "SY": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=SY&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "GB": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=GB&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "CN": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=CN&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "JO": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=JO&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "AF": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=AF&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "PS": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=PS&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "ZA": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=ZA&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "LB": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=LB&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "ET": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=ET&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "YE": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=YE&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "ID": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=ID&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "SS": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=SS&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "SA": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=SA&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "SO": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=SO&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "IQ": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=IQ&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA",
-    "US": "https://www.googleapis.com/youtube/v3/videos?part=snippet%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=US&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA"
-}
-
-YT_API_CHANNEL_DATA_BASE_URL = "https://www.googleapis.com/youtube/v3/channels?part=snippet%2Cstatistics&maxResults=50&key=AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA&id="
 UNIQUE_CHANNELS = {}
 
 
 def get_daily_trending_videos():
     try:
         all_region_trending_videos = []
-        for (region, url) in region_trending_videos_urls_map.items():
-            region_trending_videos = get_trending_videos(region, url)
+        for region in target_regions:
+            video_data_request_url = url_builder.build_video_url(region)
+            region_trending_videos = get_trending_videos(region, video_data_request_url)
             if region_trending_videos is not None and len(region_trending_videos) > 0:
                 all_region_trending_videos += region_trending_videos
         logMessage = "all region total >> " + str(len(all_region_trending_videos))
@@ -130,11 +102,11 @@ def get_video_data(region, videos):
 
 def get_channel_data(channel_id):
     try:
-        request_url = YT_API_CHANNEL_DATA_BASE_URL + channel_id
-        #print("channel req url >> ", request_url, channel_id)
+        request_url = url_builder.build_channel_url(channel_id)
+        # print("channel req url >> ", request_url, channel_id)
         channel_details = {}
         response = get_yt_api_request_data(request_url)
-        #print("channel response >> ", response)
+        # print("channel response >> ", response)
         channel = response["items"][0]
         channel_details["location"] = get_value_if_key_exists_or_default(channel["snippet"], "country", "N/A")
         UNIQUE_CHANNELS[channel_id] = channel_details["location"]
@@ -161,4 +133,3 @@ def get_value_if_key_exists_or_default(dictionary, key, default_value=None):
 
 def check_if_key_exists(dictionary, key):
     return key in dictionary
-
