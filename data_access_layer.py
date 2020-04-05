@@ -59,7 +59,6 @@ def save_videos(all_videos):
                 ))
                 connection.commit()
                 counter += 1
-                print(counter)
         print("Insert Counter >> ", counter)
         return None
     except Exception as err:

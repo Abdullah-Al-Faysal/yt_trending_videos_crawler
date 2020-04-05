@@ -131,8 +131,10 @@ def get_video_data(region, videos):
 def get_channel_data(channel_id):
     try:
         request_url = YT_API_CHANNEL_DATA_BASE_URL + channel_id
+        #print("channel req url >> ", request_url, channel_id)
         channel_details = {}
         response = get_yt_api_request_data(request_url)
+        #print("channel response >> ", response)
         channel = response["items"][0]
         channel_details["location"] = get_value_if_key_exists_or_default(channel["snippet"], "country", "N/A")
         UNIQUE_CHANNELS[channel_id] = channel_details["location"]
