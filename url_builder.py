@@ -12,20 +12,16 @@ YT_API_KEY = "AIzaSyA4eYXd8rTRfpTlOORg3a7vGMi9vPsOfjA"
 
 def build_video_url(region_code, part="snippet,statistics", chart="mostPopular", max_results=50):
     try:
-        url = "https://www.googleapis.com/youtube/v3/videos?"
+        base_url = "https://www.googleapis.com/youtube/v3/videos?"
         url_params = {
             "part": part,
             "chart": chart,
             "max_results": str(max_results),
-            "region_code": region_code
+            "region_code": region_code,
+            "key": YT_API_KEY
         }
-        for (param, value) in url_params.items():
-            if "," in value:
-                parts = value.split(',')
-                value = '%2C'.join(parts)
-            url += "" if url[-1] == '?' else "&" + snake_case_to_lower_camel_case(param) + "=" + value
-        url += "&key=" + YT_API_KEY
-        return url
+        generated_url = build_url(base_url, url_params)
+        return generated_url
     except Exception as err:
         print("Video url build error >> ", err)
         logger.error(err)
@@ -34,21 +30,32 @@ def build_video_url(region_code, part="snippet,statistics", chart="mostPopular",
 
 def build_channel_url(channel_id, part="snippet,statistics", max_results=50):
     try:
-        url = "https://www.googleapis.com/youtube/v3/channels?"
+        base_url = "https://www.googleapis.com/youtube/v3/channels?"
         url_params = {
             "id": channel_id,
             "part": part,
-            "max_results": str(max_results)
+            "max_results": str(max_results),
+            "key": YT_API_KEY
         }
+        generated_url = build_url(base_url, url_params)
+        return generated_url
+    except Exception as err:
+        print("Channel url build error >> ", err)
+        logger.error(err)
+        return ""
+
+
+def build_url(base_url, url_params):
+    try:
+        url = base_url
         for (param, value) in url_params.items():
             if "," in value:
                 parts = value.split(',')
                 value = '%2C'.join(parts)
-            url += "" if url[-1] == '?' else "&" + snake_case_to_lower_camel_case(param) + "=" + value
-        url += "&key=" + YT_API_KEY
+            url += ("" if url[-1] == '?' else "&") + snake_case_to_lower_camel_case(param) + "=" + value
         return url
     except Exception as err:
-        print("Channel url build error >> ", err)
+        print("url build error >> ", err)
         logger.error(err)
         return ""
 
