@@ -66,3 +66,4 @@ class UrlBuilder:
         result = parts[0] + (''.join(x.title() for x in parts[1:]) if len(parts) > 1 else '')
         # print("camel cased >> ", result)
         return result
+

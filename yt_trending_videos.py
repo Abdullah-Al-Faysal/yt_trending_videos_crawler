@@ -1,4 +1,6 @@
-import urllib.request
+from urllib.request import urlopen, Request
+from fake_useragent import UserAgent
+import urllib.error
 import datetime
 import json
 from functions import normalize_metadate, get_category, get_language
@@ -12,11 +14,11 @@ logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\yttv.
                     filemode='a')
 logger = logging.getLogger(__name__)
 
-url_builder = UrlBuilder("AIzaSyC2j2IWkz0qqM643zOm5xbOt88djkTL024")
+url_builder = UrlBuilder("AIzaSyDbbSUKCqcBLk0-Z5Fe99o8TKwLh-zUSHE")
 YT_CHANNEL_BASE_URL = "https://www.youtube.com/channel/"
 target_regions = ["IN", "PK", "AE", "BD", "PH", "IR", "EG", "NP", "LK", "SY", "GB", "CN", "JO", "AF", "PS", "ZA", "LB",
                   "ET", "YE", "ID", "SS", "SA", "SO", "IQ", "US"]
-
+fake_user_agent = UserAgent()
 UNIQUE_CHANNELS = {}
 
 
@@ -63,11 +65,21 @@ def get_trending_videos(region, request_url):
 
 def get_yt_api_request_data(request_url):
     try:
-        with urllib.request.urlopen(request_url) as url:
+        custom_headers = {
+            'User-Agent': fake_user_agent.chrome
+        }
+        with urlopen(Request(request_url, headers=custom_headers)) as url:
             response = json.loads(url.read().decode())
             return response
+    except urllib.error.HTTPError as http_err:
+        error_json = json.loads(http_err.read().decode())
+        print("Req error >> ", error_json, request_url)
+        logger.error(request_url)
+        logger.error(error_json)
+        return {}
     except Exception as err:
-        print("req error >> ", err)
+        print("req error >> ", err, request_url) #json.dumps(err)
+        logger.error(request_url)
         logger.error(err)
         return {}
 
@@ -103,22 +115,29 @@ def get_video_data(region, videos):
 def get_channel_data(channel_id):
     try:
         request_url = url_builder.build_channel_url(channel_id)
-        # print("channel req url >> ", request_url, channel_id)
         channel_details = {}
         response = get_yt_api_request_data(request_url)
         # print("channel response >> ", response)
-        channel = response["items"][0]
-        channel_details["location"] = get_value_if_key_exists_or_default(channel["snippet"], "country", "N/A")
-        UNIQUE_CHANNELS[channel_id] = channel_details["location"]
-        channel_details["channel_language"] = get_language(channel["snippet"]["description"])
-        channel_details["channel_views"] = get_int_if_key_exists_or_default(channel['statistics'], "viewCount")
-        channel_details["channel_subscribers"] = get_int_if_key_exists_or_default(channel['statistics'],
-                                                                                  "subscriberCount")
-        channel_details["channel_videos"] = get_int_if_key_exists_or_default(channel['statistics'], "videoCount")
-        channel_details["channel_comments"] = get_int_if_key_exists_or_default(channel['statistics'], "commentCount")
-        return channel_details
+        if response is not None and "items" in response and response["items"] is not None:
+            channel = response["items"][0]
+            channel_details["location"] = get_value_if_key_exists_or_default(channel["snippet"], "country", "N/A")
+            UNIQUE_CHANNELS[channel_id] = channel_details["location"]
+            channel_details["channel_language"] = get_language(channel["snippet"]["description"]) if check_if_key_exists(
+                channel["snippet"], "description") else "N/A"
+            channel_details["channel_views"] = get_int_if_key_exists_or_default(channel['statistics'], "viewCount")
+            channel_details["channel_subscribers"] = get_int_if_key_exists_or_default(channel['statistics'],
+                                                                                      "subscriberCount")
+            channel_details["channel_videos"] = get_int_if_key_exists_or_default(channel['statistics'], "videoCount")
+            channel_details["channel_comments"] = get_int_if_key_exists_or_default(channel['statistics'], "commentCount")
+            return channel_details
+        else:
+            print("channel res >> ", channel_id, response)
+            logger.error("channel res >> " + str(channel_id))
+            logger.error(response)
+            return {}
     except Exception as err:
-        print("channel error >> ", err)
+        print("channel error >> ", err, channel_id)
+        logger.error(channel_id)
         logger.error(err)
         return {}
 
