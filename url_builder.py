@@ -1,6 +1,6 @@
 import logging
 
-logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\yttv.log',
+logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\logs\yttv.log',
                     level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s [%(filename)s:%(lineno)s - %(funcName)20s()] %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
