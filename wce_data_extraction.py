@@ -5,6 +5,7 @@ import json
 import os
 import sys, traceback
 import logging
+from data_access_layer import get_connection
 import re
 
 logging.basicConfig(filename='C:\__ Work Station\Py_Projects\YT_TV_Crawler\logs\wce.log',
@@ -47,9 +48,8 @@ def write_to_json(output_file_path, records):
         return None
 
 
-def load_data_from_json():
+def load_data_from_json(input_file_path):
     try:
-        input_file_path = get_file_path("yttv_uae.json")
         with open(input_file_path, 'r', encoding="utf8") as json_file:
             records = json.load(json_file)
             # print(records, len(records))
@@ -62,7 +62,7 @@ def load_data_from_json():
 
 def filter_data():
     try:
-        records = load_data_from_json()
+        records = load_data_from_json(get_file_path("yttv_uae.json"))
         filtered_records = []
         total_records = len(records)
         print(total_records)
@@ -96,6 +96,54 @@ def filter_data():
         traceback.print_exception(exc_type, exc_value, exc_traceback)
         logger.exception(err)
         return None
+
+
+def write_wce_data_to_db():
+    try:
+        connection = get_connection()
+        records = load_data_from_json(get_file_path("yttv_uae_filtered.json"))
+        counter = 0
+        query = """INSERT INTO wce_export_videos (video_id, video_title, trending_at, category, published_date, views, likes, 
+                dislikes, comments,  extracted_date, language, channel_id, channel_title, channel_url, channel_language,
+                channel_views, channel_subscribers, channel_videos, channel_comments, location) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        with connection.cursor() as cursor:
+            for video in records:
+                # print(video["published_at"], print(video["id"]))
+                result = cursor.execute(query, (
+                    video["video_id"],
+                    video["video_title"],
+                    "AE",
+                    "N/C",
+                    video["published_at"],
+                    video["views"],
+                    video["likes"],
+                    video["dislikes"],
+                    None,
+                    video["extracted_date"],
+                    "N/C",
+                    video["channel_id"],
+                    video["channel_title"],
+                    video["channel_url"],
+                    "N/C",
+                    None,
+                    video["subscribers"],
+                    None,
+                    None,
+                    video["location"]
+                ))
+                connection.commit()
+                counter += 1
+        print("WCE Records Insert Counter >> ", counter)
+        return None
+    except Exception as err:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print("WCE Records DB Write error >> ", err)
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+        logger.exception(err)
+        return None
+    finally:
+        connection.close()
 
 
 def de_humanize_large_number(value, separator=','):
@@ -150,5 +198,6 @@ def get_file_path(file_name, relative_location="files/", base_location=os.path.d
 
 
 if __name__ == "__main__":
-    # print(get_file_path("yttv_uae.json"))
-    filter_data()
+    print(get_file_path("yttv_uae_filtered.json"))
+    # filter_data()
+    # write_wce_data_to_db()
